@@ -29,6 +29,7 @@ export function CalendarApp() {
   const [error, setError] = useState<string | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
   const [slotStart, setSlotStart] = useState<Date | null>(null);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [conflictId, setConflictId] = useState<string | null>(null);
   const [freshIds, setFreshIds] = useState<Set<string>>(new Set());
 
@@ -194,6 +195,13 @@ export function CalendarApp() {
           freshIds={freshIds}
           onSlotClick={(start) => {
             setSlotStart(start);
+            setSelectedBooking(null);
+            setConflictId(null);
+            setPanelOpen(true);
+          }}
+          onBookingClick={(booking) => {
+            setSlotStart(null);
+            setSelectedBooking(booking);
             setConflictId(null);
             setPanelOpen(true);
           }}
@@ -207,6 +215,7 @@ export function CalendarApp() {
           resourceName={selected.name}
           resourceId={selected.id}
           slotStart={slotStart}
+          booking={selectedBooking}
           onClose={() => setPanelOpen(false)}
           conflictBookingId={conflictId}
           setConflictBookingId={setConflictId}
@@ -220,6 +229,10 @@ export function CalendarApp() {
                 return next;
               });
             }, 400);
+          }}
+          onCancelled={(bookingId) => {
+            setBookings((prev) => prev.filter((b) => b.id !== bookingId));
+            setSelectedBooking(null);
           }}
         />
       ) : null}

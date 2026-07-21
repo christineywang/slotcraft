@@ -20,6 +20,7 @@ type Props = {
   highlightId: string | null;
   freshIds: Set<string>;
   onSlotClick: (start: Date) => void;
+  onBookingClick: (booking: Booking) => void;
 };
 
 const hours = Array.from(
@@ -34,6 +35,7 @@ export function WeekCalendar({
   highlightId,
   freshIds,
   onSlotClick,
+  onBookingClick,
 }: Omit<Props, "bookable"> & { bookable?: boolean }) {
   const totalHeight = hours.length * HOUR_HEIGHT;
 
@@ -79,8 +81,9 @@ export function WeekCalendar({
 
         {days.map((offset) => {
           const day = addDays(weekStart, offset);
-          const dayBookings = bookings.filter((b) =>
-            sameDay(new Date(b.startsAt), day),
+          const dayBookings = bookings.filter(
+            (b) =>
+              b.status !== "cancelled" && sameDay(new Date(b.startsAt), day),
           );
 
           return (
@@ -116,12 +119,15 @@ export function WeekCalendar({
                 const fresh = freshIds.has(booking.id);
 
                 return (
-                  <div
+                  <button
                     key={booking.id}
-                    className={`pointer-events-none absolute inset-x-1 z-10 overflow-hidden rounded-md border px-2 py-1 text-left text-white ${
+                    type="button"
+                    aria-label={`Open booking ${booking.title}`}
+                    onClick={() => onBookingClick(booking)}
+                    className={`absolute inset-x-1 z-10 cursor-pointer overflow-hidden rounded-md border px-2 py-1 text-left text-white transition ${
                       highlighted
                         ? "border-coral bg-coral animate-coral-flash"
-                        : "border-teal/30 bg-teal"
+                        : "border-teal/30 bg-teal hover:bg-teal-soft"
                     } ${fresh ? "animate-spring-in" : ""}`}
                     style={{ top, height: Math.min(height, totalHeight - top) }}
                   >
@@ -131,7 +137,7 @@ export function WeekCalendar({
                     <div className="truncate text-[10px] opacity-90">
                       {initials(booking.host.name)}
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
