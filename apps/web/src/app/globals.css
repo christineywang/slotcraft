@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color: #1a2332;
+  background: #e8ecef;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(15, 110, 107, 0.12), transparent 55%),
+    radial-gradient(900px 500px at 100% 0%, rgba(26, 35, 50, 0.08), transparent 50%),
+    linear-gradient(180deg, #e8ecef 0%, #d9e2e8 100%);
+}
+
+.calendar-grid-bg {
+  background-image:
+    linear-gradient(to right, rgba(26, 35, 50, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(26, 35, 50, 0.05) 1px, transparent 1px);
+  background-size: calc(100% / 7) 48px;
+}

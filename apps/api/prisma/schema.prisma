@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  owner
+  admin
+  member
+  viewer
+}
+
+enum BookingStatus {
+  confirmed
+  cancelled
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  memberships  Membership[]
+  bookings     Booking[]
+}
+
+model Organization {
+  id        String       @id @default(cuid())
+  name      String
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  members   Membership[]
+  resources Resource[]
+}
+
+model Membership {
+  id             String       @id @default(cuid())
+  userId         String
+  organizationId String
+  role           Role
+  createdAt      DateTime     @default(now())
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+}
+
+model Resource {
+  id             String       @id @default(cuid())
+  organizationId String
+  name           String
+  timezone       String       @default("America/Los_Angeles")
+  capacity       Int          @default(1)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  bookings       Booking[]
+
+  @@index([organizationId])
+}
+
+model Booking {
+  id         String        @id @default(cuid())
+  resourceId String
+  hostId     String
+  title      String
+  notes      String?
+  startsAt   DateTime
+  endsAt     DateTime
+  status     BookingStatus @default(confirmed)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  resource   Resource      @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  host       User          @relation(fields: [hostId], references: [id], onDelete: Cascade)
+
+  @@index([resourceId, startsAt, endsAt])
+  @@index([resourceId, status])
+}
