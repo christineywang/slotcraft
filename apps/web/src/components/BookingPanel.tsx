@@ -212,7 +212,7 @@ export function BookingPanel({
                   type="button"
                   onClick={onCancel}
                   disabled={loading}
-                  className="w-full rounded-lg bg-coral px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-coral/90 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="w-full rounded-lg bg-coral/90 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-coral disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {loading ? "Cancelling…" : "Cancel booking"}
                 </button>
