@@ -77,3 +77,9 @@ export function createBooking(input: CreateBookingInput) {
     body: JSON.stringify(input),
   });
 }
+
+export function cancelBooking(id: string) {
+  return request<Booking>(`/bookings/${id}`, {
+    method: "DELETE",
+  });
+}
