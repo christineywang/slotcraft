@@ -1,22 +1,46 @@
-# AGENTS.md
+# Agent instructions — Slotcraft
+
+Monorepo: pnpm workspaces + Turborepo. Web (`apps/web`), API (`apps/api`), shared Zod package (`packages/shared`). Postgres via root `docker-compose.yml`.
+
+## Local / cloud common commands
+
+| Task | Command |
+|------|---------|
+| Full local setup | `pnpm setup` or see README |
+| Dev servers | `pnpm dev` |
+| Lint / typecheck | `pnpm lint` |
+| Production build | `pnpm build` |
+| DB up / down | `pnpm db:up` / `pnpm db:down` |
+| Migrations | `pnpm db:migrate` |
+| Reset DB + seed | `pnpm db:reset` |
+
+Demo logins (after seed): `admin@slotcraft.local` / `slotcraft` (also viewer and member — see README).
+
+API health: `http://localhost:3001/health`. Web: `http://localhost:3000`.
 
 ## Cursor Cloud specific instructions
 
-Slotcraft is a pnpm + Turborepo monorepo. Standard commands and demo credentials live in `README.md`; scripts are in the root `package.json`. Notes below cover only non-obvious, durable caveats for running it in Cursor Cloud.
+Cloud agents use `.cursor/environment.json` in this repo. On boot they run `scripts/cloud-install.sh` (deps, Docker Postgres, migrate, seed), start Docker, then run `pnpm dev` in a shared terminal.
 
-### Services
-- `@slotcraft/shared` — Zod contracts compiled to `packages/shared/dist` (consumed by api + web).
-- `@slotcraft/api` — NestJS API on `:3001` (`/health`), needs Postgres.
-- `@slotcraft/web` — Next.js UI on `:3000` (`/calendar`).
-- Postgres 16 — via Docker Compose (`docker-compose.yml`), on `:5432`.
+### If something fails during boot
 
-### Startup (services are NOT auto-started by the update script)
-1. Docker daemon must be running. On a fresh pod it is started manually (systemd is unavailable): `sudo dockerd &`. The `ubuntu` user is in the `docker` group, so `docker`/`pnpm db:up` work without sudo once the daemon is up.
-2. `pnpm db:up` — start Postgres. The DB lives in a Docker volume and starts empty, so it must be migrated + seeded before use: `pnpm db:migrate && pnpm db:seed`.
-3. `pnpm dev` — runs api + web + `shared` (tsc watch) in parallel via Turbo.
+1. Ensure Docker is up: `sudo service docker start` then `docker compose ps`.
+2. Re-run install steps: `bash scripts/cloud-install.sh`.
+3. If `@slotcraft/shared` imports fail (e.g. `Cannot find module '@slotcraft/shared/dist/index.js'` during `db:seed`/`dev`): the committed `packages/shared/tsconfig.tsbuildinfo` makes incremental `tsc` skip emitting `dist/index.js` on a clean checkout (only a `.d.ts.map` appears). Delete it first, then rebuild: `rm -f packages/shared/tsconfig.tsbuildinfo && pnpm --filter @slotcraft/shared build`.
+4. If Prisma errors on `DATABASE_URL`: confirm `apps/api/.env` exists (install script copies from `.env.example`).
 
-### Non-obvious caveats
-- `pnpm dev` does NOT build `@slotcraft/shared` first (the Turbo `dev` task has no `^build` dependency). The update script pre-builds it; if `packages/shared/dist/index.js` is missing, api/web fail with `Cannot find module '@slotcraft/shared/dist/index.js'`.
-- The committed `packages/shared/tsconfig.tsbuildinfo` makes incremental `tsc` skip emitting `dist/index.js` on a clean checkout (only a `.d.ts.map` appears). Delete `packages/shared/tsconfig.tsbuildinfo` before building `@slotcraft/shared`, otherwise the shared library is never emitted. The update script handles this; do the same manually if you rebuild shared after editing it.
-- `pnpm lint` is a typecheck (`tsc --noEmit`) across all packages; there is no ESLint.
-- Env files (`.env`, `apps/api/.env`, `apps/web/.env.local`) are gitignored; the update script creates them from the `.env.example` templates if missing.
+### Secrets (optional)
+
+Default dev values from `.env.example` are copied on install and are enough for local Postgres + JWT in cloud.
+
+For non-default secrets, add them in [Cloud Agents → Secrets](https://cursor.com/dashboard/cloud-agents) (Runtime Secret for `JWT_SECRET`, etc.). Restart the agent after adding secrets.
+
+### Verifying agent work
+
+- `pnpm lint` and `pnpm build` when changing types or shared contracts.
+- Hit API: `curl -s http://localhost:3001/health`.
+- Manual UI checks on :3000 for calendar / booking flows (conflict → 409, viewer → 403).
+
+### Faster startups (snapshot)
+
+After a successful agent-driven or first Dockerfile boot, save a **snapshot** from [Environments](https://cursor.com/dashboard/cloud-agents#environments) and optionally set `"snapshot": "<id>"` in `.cursor/environment.json` to skip repeated Docker layer work.

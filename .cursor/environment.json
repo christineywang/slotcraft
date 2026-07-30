@@ -1,0 +1,20 @@
+{
+  "name": "slotcraft",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "install": "bash scripts/cloud-install.sh",
+  "start": "sudo service docker start",
+  "ports": [
+    { "name": "web", "port": 3000 },
+    { "name": "api", "port": 3001 }
+  ],
+  "terminals": [
+    {
+      "name": "dev",
+      "command": "pnpm dev",
+      "description": "Next.js on :3000 and Nest API on :3001 (Turbo parallel dev)"
+    }
+  ]
+}
