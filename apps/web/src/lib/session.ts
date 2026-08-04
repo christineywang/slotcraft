@@ -45,3 +45,17 @@ export function getToken(): string | null {
 export function canBook(role: Role) {
   return role === "owner" || role === "admin" || role === "member";
 }
+
+export function canManageResources(role: Role) {
+  return role === "owner" || role === "admin";
+}
+
+export function canEditBooking(
+  role: Role,
+  hostId: string,
+  userId: string,
+) {
+  if (role === "viewer") return false;
+  if (role === "owner" || role === "admin") return true;
+  return hostId === userId;
+}

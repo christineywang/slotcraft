@@ -2,7 +2,10 @@ import type {
   AuthResponse,
   Booking,
   CreateBookingInput,
+  CreateResourceInput,
   Resource,
+  UpdateBookingInput,
+  UpdateResourceInput,
 } from "@slotcraft/shared";
 import { getToken, clearSession } from "./session";
 
@@ -66,6 +69,26 @@ export function listResources() {
   return request<Resource[]>("/resources");
 }
 
+export function createResource(input: CreateResourceInput) {
+  return request<Resource>("/resources", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function updateResource(id: string, input: UpdateResourceInput) {
+  return request<Resource>(`/resources/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
+
+export function deleteResource(id: string) {
+  return request<{ id: string; deleted: boolean }>(`/resources/${id}`, {
+    method: "DELETE",
+  });
+}
+
 export function listBookings(resourceId: string, from: string, to: string) {
   const q = new URLSearchParams({ from, to });
   return request<Booking[]>(`/resources/${resourceId}/bookings?${q}`);
@@ -76,4 +99,37 @@ export function createBooking(input: CreateBookingInput) {
     method: "POST",
     body: JSON.stringify(input),
   });
+}
+
+export function updateBooking(id: string, input: UpdateBookingInput) {
+  return request<Booking>(`/bookings/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
+
+export function cancelBooking(id: string) {
+  return request<Booking>(`/bookings/${id}`, {
+    method: "DELETE",
+  });
+}
+
+/** Nest ConflictException nests payload under `message` sometimes. */
+export function extractConflict(err: ApiError): {
+  message: string;
+  bookingId: string | null;
+} {
+  const body = err.body as {
+    message?: string | { message?: string; conflict?: { bookingId: string } };
+    conflict?: { bookingId: string };
+  };
+  const nested =
+    body && typeof body.message === "object" ? body.message : null;
+  const message =
+    (typeof body.message === "string" ? body.message : null) ||
+    nested?.message ||
+    err.message;
+  const bookingId =
+    body.conflict?.bookingId ?? nested?.conflict?.bookingId ?? null;
+  return { message, bookingId };
 }

@@ -4,28 +4,31 @@
 
 - **Organization** — tenant boundary (seed: Northlight Studios)
 - **Membership** — user ↔ org with role
-- **Resource** — bookable room/desk (timezone + capacity)
+- **Resource** — bookable room/desk (timezone, capacity, availability hours)
 - **Booking** — interval on a resource owned by a host user
 
 ## Roles
 
-| Role | Read calendar | Create/cancel booking | Manage resources (Phase 2) |
-|------|---------------|------------------------|----------------------------|
-| `owner` / `admin` | yes | yes | yes |
-| `member` | yes | yes | no |
-| `viewer` | yes | no | no |
+| Role | Read calendar | Create booking | Cancel/edit | Manage resources |
+|------|---------------|----------------|-------------|------------------|
+| `owner` / `admin` | yes | yes | any booking | yes |
+| `member` | yes | yes | own bookings only | no |
+| `viewer` | yes | no | no | no |
 
-## Booking rules (Phase 1)
+## Booking rules (v2)
 
 1. **Interval validity** — `endsAt` must be after `startsAt`.
 2. **Org isolation** — resources and bookings are always scoped to the JWT’s `organizationId`.
-3. **Overlap rejection** — two *confirmed* bookings on the same resource must not intersect:  
-   `a.startsAt < b.endsAt && a.endsAt > b.startsAt`.
-4. **Capacity** — schema has `capacity`; Phase 1 treats capacity as `1` (hard exclusive).
+3. **Availability hours** — interval must fall on a single local day inside `[availableFromHour, availableToHour)`.
+4. **Capacity-aware overlap** — confirmed bookings that intersect count toward `capacity`. Reject when overlapping count ≥ capacity.
 5. **Cancel** — soft cancel via `status = cancelled` (excluded from conflict checks).
+6. **Reschedule** — `PATCH /bookings/:id` re-runs availability + capacity checks, excluding the booking being edited.
 
 ## Demo seed story
 
-- Admin: Alex Admin  
-- Viewer: Vera Viewer  
-- Seeded “Product sync” on Studio A (Wednesday slot) so conflicts are easy to trigger during demos.
+- Admin: Alex Admin — can manage resources and edit anyone’s bookings
+- Member: Morgan Member — owns “Design critique” + Desk 12 “Focus block”
+- Viewer: Vera Viewer — read-only
+- Studio A — capacity 1, open 9–18, seeded “Product sync” Wednesday 14:00
+- Boardroom — capacity 1, open 8–20, seeded “Design critique” Thursday
+- Desk 12 — capacity 2, open 8–20, seeded “Focus block” Wednesday 14:00 (one seat free)

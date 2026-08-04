@@ -31,7 +31,7 @@ async function main() {
 
   const member = await prisma.user.create({
     data: {
-      email: "member@slotcraft.local",
+      email: DEMO_CREDENTIALS.member.email,
       name: "Morgan Member",
       passwordHash,
     },
@@ -49,9 +49,27 @@ async function main() {
       },
       resources: {
         create: [
-          { name: "Studio A", timezone: "America/Los_Angeles", capacity: 1 },
-          { name: "Boardroom", timezone: "America/Los_Angeles", capacity: 1 },
-          { name: "Desk 12", timezone: "America/Los_Angeles", capacity: 1 },
+          {
+            name: "Studio A",
+            timezone: "America/Los_Angeles",
+            capacity: 1,
+            availableFromHour: 9,
+            availableToHour: 18,
+          },
+          {
+            name: "Boardroom",
+            timezone: "America/Los_Angeles",
+            capacity: 1,
+            availableFromHour: 8,
+            availableToHour: 20,
+          },
+          {
+            name: "Desk 12",
+            timezone: "America/Los_Angeles",
+            capacity: 2,
+            availableFromHour: 8,
+            availableToHour: 20,
+          },
         ],
       },
     },
@@ -60,6 +78,7 @@ async function main() {
 
   const studioA = org.resources.find((r) => r.name === "Studio A")!;
   const boardroom = org.resources.find((r) => r.name === "Boardroom")!;
+  const desk12 = org.resources.find((r) => r.name === "Desk 12")!;
 
   // Seed mid-afternoon Wednesday of the current local week (easy conflict demo).
   const weekStart = new Date();
@@ -101,10 +120,25 @@ async function main() {
     },
   });
 
-  console.log("Seeded Slotcraft demo data");
+  // One seat taken on Desk 12 (capacity 2) so the second overlap succeeds, third fails.
+  await prisma.booking.create({
+    data: {
+      resourceId: desk12.id,
+      hostId: member.id,
+      title: "Focus block",
+      notes: "Seeded for capacity demo — one seat still open",
+      startsAt: wednesday,
+      endsAt: wednesdayEnd,
+      status: "confirmed",
+    },
+  });
+
+  console.log("Seeded Slotcraft v2 demo data");
   console.log(`  Admin:  ${DEMO_CREDENTIALS.admin.email} / ${DEMO_CREDENTIALS.admin.password}`);
+  console.log(`  Member: ${DEMO_CREDENTIALS.member.email} / ${DEMO_CREDENTIALS.member.password}`);
   console.log(`  Viewer: ${DEMO_CREDENTIALS.viewer.email} / ${DEMO_CREDENTIALS.viewer.password}`);
   console.log(`  Org:    ${org.name} (${org.resources.length} resources)`);
+  console.log("  Tips:   Studio A 9–6 · Desk 12 capacity 2 · cancel frees the slot");
 }
 
 main()

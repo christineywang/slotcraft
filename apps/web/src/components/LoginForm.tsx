@@ -6,12 +6,28 @@ import { login } from "@/lib/api";
 import { saveSession } from "@/lib/session";
 import { useRouter } from "next/navigation";
 
+const ROLES = [
+  { key: "admin" as const, label: "Admin", hint: "book + manage" },
+  { key: "member" as const, label: "Member", hint: "book own" },
+  { key: "viewer" as const, label: "Viewer", hint: "read-only" },
+];
+
 export function LoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState<string>(DEMO_CREDENTIALS.admin.email);
   const [password, setPassword] = useState<string>(DEMO_CREDENTIALS.admin.password);
+  const [activeRole, setActiveRole] = useState<"admin" | "member" | "viewer">(
+    "admin",
+  );
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  function pickRole(role: "admin" | "member" | "viewer") {
+    setActiveRole(role);
+    setEmail(DEMO_CREDENTIALS[role].email);
+    setPassword(DEMO_CREDENTIALS[role].password);
+    setError(null);
+  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -46,6 +62,24 @@ export function LoginForm() {
         <p className="text-sm leading-relaxed text-ink/70">
           Book shared rooms without the double-book fog
         </p>
+      </div>
+
+      <div className="mb-5 grid grid-cols-3 gap-1 rounded-lg border border-ink/10 bg-stone/40 p-1">
+        {ROLES.map((role) => (
+          <button
+            key={role.key}
+            type="button"
+            onClick={() => pickRole(role.key)}
+            className={`rounded-md px-2 py-2 text-center transition ${
+              activeRole === role.key
+                ? "bg-white text-ink shadow-sm"
+                : "text-ink/60 hover:text-ink"
+            }`}
+          >
+            <div className="text-xs font-semibold">{role.label}</div>
+            <div className="text-[10px] opacity-70">{role.hint}</div>
+          </button>
+        ))}
       </div>
 
       <label className="mb-4 block text-sm">
@@ -85,8 +119,7 @@ export function LoginForm() {
       </button>
 
       <p className="mt-6 text-xs leading-relaxed text-ink/55">
-        Demo: <code className="text-ink/70">{DEMO_CREDENTIALS.admin.email}</code> or{" "}
-        <code className="text-ink/70">{DEMO_CREDENTIALS.viewer.email}</code> — password{" "}
+        Demo password for all roles:{" "}
         <code className="text-ink/70">{DEMO_CREDENTIALS.admin.password}</code>
       </p>
     </form>
