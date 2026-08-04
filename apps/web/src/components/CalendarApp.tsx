@@ -6,6 +6,7 @@ import type { Booking, Resource } from "@slotcraft/shared";
 import { listBookings, listResources } from "@/lib/api";
 import {
   canBook,
+  canManageResources,
   clearSession,
   getSession,
   type Session,
@@ -17,6 +18,7 @@ import {
 } from "@/lib/dates";
 import { WeekCalendar } from "@/components/WeekCalendar";
 import { BookingPanel } from "@/components/BookingPanel";
+import { ResourceAdmin } from "@/components/ResourceAdmin";
 
 export function CalendarApp() {
   const router = useRouter();
@@ -28,7 +30,9 @@ export function CalendarApp() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
   const [slotStart, setSlotStart] = useState<Date | null>(null);
+  const [editing, setEditing] = useState<Booking | null>(null);
   const [conflictId, setConflictId] = useState<string | null>(null);
   const [freshIds, setFreshIds] = useState<Set<string>>(new Set());
 
@@ -57,9 +61,9 @@ export function CalendarApp() {
     return { from: from.toISOString(), to: to.toISOString() };
   }, [weekStart]);
 
-  const refreshBookings = useCallback(async () => {
+  const refreshBookings = useCallback(async (silent = false) => {
     if (!resourceId) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
       const items = await listBookings(resourceId, range.from, range.to);
       setBookings(items);
@@ -67,7 +71,7 @@ export function CalendarApp() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load bookings");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [resourceId, range.from, range.to]);
 
@@ -75,9 +79,18 @@ export function CalendarApp() {
     void refreshBookings();
   }, [refreshBookings]);
 
+  // Light polling so a second browser tab feels "live" during demos.
+  useEffect(() => {
+    if (!resourceId || panelOpen || adminOpen) return;
+    const id = window.setInterval(() => {
+      void refreshBookings(true);
+    }, 8000);
+    return () => window.clearInterval(id);
+  }, [resourceId, panelOpen, adminOpen, refreshBookings]);
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (panelOpen) return;
+      if (panelOpen || adminOpen) return;
       if (e.key === "ArrowLeft") {
         setWeekStart((w) => addDays(w, -7));
       } else if (e.key === "ArrowRight") {
@@ -86,10 +99,24 @@ export function CalendarApp() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [panelOpen]);
+  }, [panelOpen, adminOpen]);
 
   const selected = resources.find((r) => r.id === resourceId) ?? null;
   const bookable = session ? canBook(session.membership.role) : false;
+  const manageResources = session
+    ? canManageResources(session.membership.role)
+    : false;
+
+  function markFresh(id: string) {
+    setFreshIds((prev) => new Set(prev).add(id));
+    window.setTimeout(() => {
+      setFreshIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }, 400);
+  }
 
   if (!session) {
     return (
@@ -123,6 +150,9 @@ export function CalendarApp() {
               }`}
             >
               {r.name}
+              {r.capacity > 1 ? (
+                <span className="ml-1 opacity-80">×{r.capacity}</span>
+              ) : null}
             </button>
           ))}
         </div>
@@ -149,6 +179,15 @@ export function CalendarApp() {
           >
             Next
           </button>
+          {manageResources ? (
+            <button
+              type="button"
+              onClick={() => setAdminOpen(true)}
+              className="rounded-md border border-ink/10 bg-white/80 px-2.5 py-1.5 text-sm"
+            >
+              Resources
+            </button>
+          ) : null}
         </div>
 
         <div className="text-right text-xs text-ink/55">
@@ -172,11 +211,23 @@ export function CalendarApp() {
           <h1 className="font-display text-3xl text-ink">
             {selected?.name ?? "Select a resource"}
           </h1>
-          <p className="text-sm text-ink/55">{formatWeekLabel(weekStart)}</p>
+          <p className="text-sm text-ink/55">
+            {formatWeekLabel(weekStart)}
+            {selected
+              ? ` · ${selected.availableFromHour}:00–${selected.availableToHour}:00`
+              : ""}
+            {selected && selected.capacity > 1
+              ? ` · ${selected.capacity} seats`
+              : ""}
+          </p>
         </div>
         {loading ? (
           <span className="text-xs text-ink/45">Refreshing…</span>
-        ) : null}
+        ) : !bookable ? (
+          <span className="text-xs text-ink/45">View-only</span>
+        ) : (
+          <span className="text-xs text-ink/45">Click a slot or booking</span>
+        )}
       </div>
 
       {error ? (
@@ -189,11 +240,18 @@ export function CalendarApp() {
         <WeekCalendar
           weekStart={weekStart}
           bookings={bookings}
-          bookable={bookable}
+          resource={selected}
           highlightId={conflictId}
           freshIds={freshIds}
           onSlotClick={(start) => {
+            setEditing(null);
             setSlotStart(start);
+            setConflictId(null);
+            setPanelOpen(true);
+          }}
+          onBookingClick={(booking) => {
+            setSlotStart(null);
+            setEditing(booking);
             setConflictId(null);
             setPanelOpen(true);
           }}
@@ -206,23 +264,45 @@ export function CalendarApp() {
           session={session}
           resourceName={selected.name}
           resourceId={selected.id}
+          availableFromHour={selected.availableFromHour}
+          availableToHour={selected.availableToHour}
+          capacity={selected.capacity}
           slotStart={slotStart}
-          onClose={() => setPanelOpen(false)}
+          editing={editing}
+          onClose={() => {
+            setPanelOpen(false);
+            setEditing(null);
+            setSlotStart(null);
+          }}
           conflictBookingId={conflictId}
           setConflictBookingId={setConflictId}
           onCreated={(booking) => {
             setBookings((prev) => [...prev, booking]);
-            setFreshIds((prev) => new Set(prev).add(booking.id));
-            window.setTimeout(() => {
-              setFreshIds((prev) => {
-                const next = new Set(prev);
-                next.delete(booking.id);
-                return next;
-              });
-            }, 400);
+            markFresh(booking.id);
+          }}
+          onUpdated={(booking) => {
+            setBookings((prev) =>
+              prev.map((b) => (b.id === booking.id ? booking : b)),
+            );
+            markFresh(booking.id);
+          }}
+          onCancelled={(bookingId) => {
+            setBookings((prev) => prev.filter((b) => b.id !== bookingId));
           }}
         />
       ) : null}
+
+      <ResourceAdmin
+        open={adminOpen}
+        resources={resources}
+        onClose={() => setAdminOpen(false)}
+        onChanged={(next) => {
+          setResources(next);
+          if (resourceId && !next.some((r) => r.id === resourceId)) {
+            setResourceId(next[0]?.id ?? null);
+          }
+        }}
+      />
     </main>
   );
 }

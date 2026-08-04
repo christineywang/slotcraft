@@ -52,15 +52,19 @@ model Membership {
 }
 
 model Resource {
-  id             String       @id @default(cuid())
-  organizationId String
-  name           String
-  timezone       String       @default("America/Los_Angeles")
-  capacity       Int          @default(1)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  bookings       Booking[]
+  id                String       @id @default(cuid())
+  organizationId    String
+  name              String
+  timezone          String       @default("America/Los_Angeles")
+  capacity          Int          @default(1)
+  /// Local hour [0–23] when the resource opens (inclusive).
+  availableFromHour Int          @default(8)
+  /// Local hour [1–24] when the resource closes (exclusive).
+  availableToHour   Int          @default(20)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  bookings          Booking[]
 
   @@index([organizationId])
 }

@@ -5,13 +5,17 @@ import {
   Get,
   Inject,
   Param,
+  Patch,
   Post,
   Query,
 } from "@nestjs/common";
 import { BookingsService } from "./bookings.service";
 import { CurrentUser, Roles } from "../auth/auth.decorators";
 import type { AuthUser } from "../auth/auth.types";
-import type { CreateBookingInput } from "@slotcraft/shared";
+import type {
+  CreateBookingInput,
+  UpdateBookingInput,
+} from "@slotcraft/shared";
 
 @Controller()
 export class BookingsController {
@@ -38,6 +42,16 @@ export class BookingsController {
   @Roles("owner", "admin", "member")
   create(@CurrentUser() user: AuthUser, @Body() body: CreateBookingInput) {
     return this.bookings.create(user, body);
+  }
+
+  @Patch("bookings/:id")
+  @Roles("owner", "admin", "member")
+  update(
+    @CurrentUser() user: AuthUser,
+    @Param("id") id: string,
+    @Body() body: UpdateBookingInput,
+  ) {
+    return this.bookings.update(user, id, body);
   }
 
   @Delete("bookings/:id")

@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Resource" ADD COLUMN "availableFromHour" INTEGER NOT NULL DEFAULT 8;
+ALTER TABLE "Resource" ADD COLUMN "availableToHour" INTEGER NOT NULL DEFAULT 20;

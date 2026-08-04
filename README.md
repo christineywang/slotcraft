@@ -1,8 +1,8 @@
 # Slotcraft
 
-Personal learning + demo monorepo: **resource booking** with real conflict detection, roles, and a Northlight week calendar.
+Personal learning + demo monorepo: **resource booking** with capacity-aware conflict detection, availability hours, roles, cancel/reschedule, and a Northlight week calendar.
 
-Not a toy todo list — the interesting bits are overlap rejection, JWT authz, and a week-grid UI that makes those rules visible in a 5-minute demo.
+Not a toy todo list — the interesting bits are overlap rejection, JWT authz, and a week-grid UI that makes those rules visible in a short demo.
 
 ## Stack
 
@@ -24,7 +24,8 @@ slotcraft/
 │   └── tsconfig/     # shared TypeScript base
 ├── docs/
 │   ├── ARCHITECTURE.md
-│   └── DOMAIN.md
+│   ├── DOMAIN.md
+│   └── DEMO.md
 ├── docker-compose.yml
 └── README.md
 ```
@@ -62,18 +63,23 @@ pnpm dev
 | Role   | Email                     | Password    |
 |--------|---------------------------|-------------|
 | Admin  | `admin@slotcraft.local`   | `slotcraft` |
-| Viewer | `viewer@slotcraft.local`  | `slotcraft` |
 | Member | `member@slotcraft.local`  | `slotcraft` |
+| Viewer | `viewer@slotcraft.local`  | `slotcraft` |
 
-## 5-minute demo script
+Login has a one-click role switcher for faster demos.
 
-1. `pnpm db:up && pnpm db:seed && pnpm dev`
-2. Log in as **admin** → week calendar for Studio A / Boardroom / Desk 12
-3. Click an empty hour → **Book** → teal block springs onto the grid (**success**)
-4. Book the **same** slot again → coral banner + conflicting block highlighted (**409**)
-5. Sign out → log in as **viewer** → open a slot → Book disabled / API **403**
+## Demo script
 
-That three-beat story (success / conflict / authz) is the point of the app.
+Full walkthrough: [docs/DEMO.md](docs/DEMO.md)
+
+Short version:
+
+1. `pnpm db:reset && pnpm dev`
+2. **Admin** → book Studio A → success
+3. Double-book → coral **409** → cancel → rebook succeeds
+4. Book outside Studio A hours (before 9) → availability error
+5. **Desk 12** (×2) → second overlap OK, third hits capacity
+6. **Member** / **Viewer** → own-booking vs read-only authz
 
 ## Scripts
 
@@ -82,6 +88,7 @@ That three-beat story (success / conflict / authz) is the point of the app.
 | `pnpm dev` | API + web in parallel (Turbo) |
 | `pnpm build` | Build shared → api → web |
 | `pnpm lint` | Typecheck all packages |
+| `pnpm test` | API unit tests (booking rules) |
 | `pnpm db:up` | Start Postgres (`docker compose up -d`) |
 | `pnpm db:down` | Stop Postgres |
 | `pnpm db:migrate` | Apply Prisma migrations |
@@ -123,19 +130,21 @@ postgresql://slotcraft:slotcraft@localhost:5432/slotcraft?schema=public
 
 ## Where the complexity lives
 
-- **Conflict logic:** [`apps/api/src/bookings/bookings.service.ts`](apps/api/src/bookings/bookings.service.ts) — transactional overlap check → `409`
-- **Roles:** JWT payload + `@Roles(...)` guard — viewers cannot `POST /bookings`
-- **Calendar UX:** [`apps/web/src/components/WeekCalendar.tsx`](apps/web/src/components/WeekCalendar.tsx) + booking side panel
+- **Conflict + capacity + hours:** [`apps/api/src/bookings/bookings.service.ts`](apps/api/src/bookings/bookings.service.ts) + [`booking-rules.ts`](apps/api/src/bookings/booking-rules.ts)
+- **Roles:** JWT payload + `@Roles(...)` — viewers blocked; members mutate only their bookings; admins manage resources
+- **Calendar UX:** [`apps/web/src/components/WeekCalendar.tsx`](apps/web/src/components/WeekCalendar.tsx) + booking / resource panels
 
 ## Docs
 
+- [Demo script](docs/DEMO.md) — beat-by-beat walkthrough
 - [Architecture](docs/ARCHITECTURE.md) — request path FE → API → Prisma
 - [Domain](docs/DOMAIN.md) — booking rules & roles
 
 ## Phase map
 
-- **Phase 1 (this repo):** login, resources, week calendar, create booking, conflict + authz
-- **Phase 2+:** availability hours, cancel/reschedule, tests, optional websockets
+- **v1:** login, resources, week calendar, create booking, exclusive conflict + authz
+- **v2 (this repo):** availability hours, capacity > 1, cancel/reschedule, resource admin, role switcher, tests, live polling
+- **Later:** websockets, multi-org signup, drag-resize on the grid
 
 ## Troubleshooting
 

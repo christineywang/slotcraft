@@ -1,6 +1,6 @@
 "use client";
 
-import type { Booking } from "@slotcraft/shared";
+import type { Booking, Resource } from "@slotcraft/shared";
 import {
   DAY_END_HOUR,
   DAY_START_HOUR,
@@ -16,10 +16,11 @@ import {
 type Props = {
   weekStart: Date;
   bookings: Booking[];
-  bookable: boolean;
+  resource: Resource;
   highlightId: string | null;
   freshIds: Set<string>;
   onSlotClick: (start: Date) => void;
+  onBookingClick: (booking: Booking) => void;
 };
 
 const hours = Array.from(
@@ -28,14 +29,45 @@ const hours = Array.from(
 );
 const days = Array.from({ length: 7 }, (_, i) => i);
 
+function layoutColumns(dayBookings: Booking[]) {
+  const sorted = [...dayBookings].sort(
+    (a, b) =>
+      new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime() ||
+      new Date(a.endsAt).getTime() - new Date(b.endsAt).getTime(),
+  );
+
+  const columnEnds: number[] = [];
+  const placed: { booking: Booking; column: number }[] = [];
+
+  for (const booking of sorted) {
+    const start = new Date(booking.startsAt).getTime();
+    const end = new Date(booking.endsAt).getTime();
+    let column = columnEnds.findIndex((ends) => ends <= start);
+    if (column === -1) {
+      column = columnEnds.length;
+      columnEnds.push(end);
+    } else {
+      columnEnds[column] = end;
+    }
+    placed.push({ booking, column });
+  }
+
+  const columnCount = Math.max(columnEnds.length, 1);
+  return { placed, columnCount };
+}
+
 export function WeekCalendar({
   weekStart,
   bookings,
+  resource,
   highlightId,
   freshIds,
   onSlotClick,
-}: Omit<Props, "bookable"> & { bookable?: boolean }) {
+  onBookingClick,
+}: Props) {
   const totalHeight = hours.length * HOUR_HEIGHT;
+  const openFrom = resource.availableFromHour;
+  const openTo = resource.availableToHour;
 
   return (
     <div className="overflow-hidden rounded-2xl border border-ink/10 bg-white/70 backdrop-blur">
@@ -82,6 +114,7 @@ export function WeekCalendar({
           const dayBookings = bookings.filter((b) =>
             sameDay(new Date(b.startsAt), day),
           );
+          const { placed, columnCount } = layoutColumns(dayBookings);
 
           return (
             <div
@@ -92,13 +125,22 @@ export function WeekCalendar({
               {hours.map((hour) => {
                 const slot = new Date(day);
                 slot.setHours(hour, 0, 0, 0);
+                const closed = hour < openFrom || hour >= openTo;
                 return (
                   <button
                     key={hour}
                     type="button"
-                    aria-label={`Book ${formatHour(hour)}`}
+                    aria-label={
+                      closed
+                        ? `Closed ${formatHour(hour)}`
+                        : `Book ${formatHour(hour)}`
+                    }
                     onClick={() => onSlotClick(slot)}
-                    className="absolute inset-x-0 cursor-cell border-b border-ink/5 transition hover:bg-teal/10"
+                    className={`absolute inset-x-0 border-b border-ink/5 transition ${
+                      closed
+                        ? "cursor-not-allowed bg-ink/[0.04] hover:bg-ink/[0.06]"
+                        : "cursor-cell hover:bg-teal/10"
+                    }`}
                     style={{
                       top: (hour - DAY_START_HOUR) * HOUR_HEIGHT,
                       height: HOUR_HEIGHT,
@@ -107,23 +149,35 @@ export function WeekCalendar({
                 );
               })}
 
-              {dayBookings.map((booking) => {
+              {placed.map(({ booking, column }) => {
                 const start = new Date(booking.startsAt);
                 const end = new Date(booking.endsAt);
                 const top = Math.max(hourToOffset(start), 0);
                 const height = durationHeight(start, end);
                 const highlighted = highlightId === booking.id;
                 const fresh = freshIds.has(booking.id);
+                const widthPct = 100 / columnCount;
+                const leftPct = column * widthPct;
 
                 return (
-                  <div
+                  <button
                     key={booking.id}
-                    className={`pointer-events-none absolute inset-x-1 z-10 overflow-hidden rounded-md border px-2 py-1 text-left text-white ${
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onBookingClick(booking);
+                    }}
+                    className={`absolute z-10 overflow-hidden rounded-md border px-2 py-1 text-left text-white transition hover:brightness-110 ${
                       highlighted
                         ? "border-coral bg-coral animate-coral-flash"
                         : "border-teal/30 bg-teal"
                     } ${fresh ? "animate-spring-in" : ""}`}
-                    style={{ top, height: Math.min(height, totalHeight - top) }}
+                    style={{
+                      top,
+                      height: Math.min(height, totalHeight - top),
+                      left: `calc(${leftPct}% + 2px)`,
+                      width: `calc(${widthPct}% - 4px)`,
+                    }}
                   >
                     <div className="truncate text-xs font-semibold">
                       {booking.title}
@@ -131,7 +185,7 @@ export function WeekCalendar({
                     <div className="truncate text-[10px] opacity-90">
                       {initials(booking.host.name)}
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
