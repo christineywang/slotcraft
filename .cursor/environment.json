@@ -1,0 +1,7 @@
+{
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "install": "set -euo pipefail; cp -n .env.example .env || true; cp -n apps/api/.env.example apps/api/.env || true; cp -n apps/web/.env.example apps/web/.env.local || true; pnpm install; pnpm --filter @slotcraft/shared build; pnpm --filter @slotcraft/api exec prisma generate"
+}
