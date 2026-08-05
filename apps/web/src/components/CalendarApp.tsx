@@ -76,6 +76,9 @@ export function CalendarApp() {
   }, [resourceId, range.from, range.to]);
 
   useEffect(() => {
+    // Drop the previous resource's events immediately so capacity badges /
+    // seat columns aren't computed against the wrong bookings while loading.
+    setBookings([]);
     void refreshBookings();
   }, [refreshBookings]);
 
@@ -151,7 +154,16 @@ export function CalendarApp() {
             >
               {r.name}
               {r.capacity > 1 ? (
-                <span className="ml-1 opacity-80">×{r.capacity}</span>
+                <span
+                  className={`ml-1.5 inline-block rounded px-1 py-0.5 text-[10px] font-semibold leading-none ${
+                    r.id === resourceId
+                      ? "bg-white/25 text-white"
+                      : "bg-ink/10 text-ink/70"
+                  }`}
+                  aria-label={`Capacity ${r.capacity}`}
+                >
+                  ×{r.capacity}
+                </span>
               ) : null}
             </button>
           ))}
@@ -238,6 +250,7 @@ export function CalendarApp() {
 
       {selected ? (
         <WeekCalendar
+          key={selected.id}
           weekStart={weekStart}
           bookings={bookings}
           resource={selected}

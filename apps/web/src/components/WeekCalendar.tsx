@@ -2,6 +2,10 @@
 
 import type { Booking, Resource } from "@slotcraft/shared";
 import {
+  capacityColumnCount,
+  countOverlapping,
+} from "@/lib/capacity";
+import {
   DAY_END_HOUR,
   DAY_START_HOUR,
   HOUR_HEIGHT,
@@ -52,8 +56,7 @@ function layoutColumns(dayBookings: Booking[]) {
     placed.push({ booking, column });
   }
 
-  const columnCount = Math.max(columnEnds.length, 1);
-  return { placed, columnCount };
+  return { placed, columnCount: columnEnds.length };
 }
 
 export function WeekCalendar({
@@ -114,11 +117,12 @@ export function WeekCalendar({
           const dayBookings = bookings.filter((b) =>
             sameDay(new Date(b.startsAt), day),
           );
-          const { placed, columnCount } = layoutColumns(dayBookings);
+          const { placed, columnCount: laidOut } = layoutColumns(dayBookings);
+          const columnCount = capacityColumnCount(laidOut, resource.capacity);
 
           return (
             <div
-              key={offset}
+              key={`${resource.id}-${offset}`}
               className="calendar-grid-bg relative border-l border-ink/8"
               style={{ height: totalHeight }}
             >
@@ -158,6 +162,10 @@ export function WeekCalendar({
                 const fresh = freshIds.has(booking.id);
                 const widthPct = 100 / columnCount;
                 const leftPct = column * widthPct;
+                const seatsUsed =
+                  resource.capacity > 1
+                    ? countOverlapping(booking, dayBookings)
+                    : null;
 
                 return (
                   <button
@@ -179,8 +187,18 @@ export function WeekCalendar({
                       width: `calc(${widthPct}% - 4px)`,
                     }}
                   >
-                    <div className="truncate text-xs font-semibold">
-                      {booking.title}
+                    <div className="flex items-start justify-between gap-1">
+                      <div className="truncate text-xs font-semibold">
+                        {booking.title}
+                      </div>
+                      {seatsUsed != null ? (
+                        <span
+                          className="shrink-0 rounded bg-white/20 px-1 text-[10px] font-semibold leading-4"
+                          title={`${seatsUsed} of ${resource.capacity} seats taken in this slot`}
+                        >
+                          {seatsUsed}/{resource.capacity}
+                        </span>
+                      ) : null}
                     </div>
                     <div className="truncate text-[10px] opacity-90">
                       {initials(booking.host.name)}
