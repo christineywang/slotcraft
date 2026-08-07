@@ -3,9 +3,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Booking, Resource } from "@slotcraft/shared";
-import { listBookings, listResources } from "@/lib/api";
+import {
+  ApiError,
+  extractConflict,
+  listBookings,
+  listResources,
+  updateBooking,
+} from "@/lib/api";
 import {
   canBook,
+  canEditBooking,
   canManageResources,
   clearSession,
   getSession,
@@ -35,6 +42,7 @@ export function CalendarApp() {
   const [editing, setEditing] = useState<Booking | null>(null);
   const [conflictId, setConflictId] = useState<string | null>(null);
   const [freshIds, setFreshIds] = useState<Set<string>>(new Set());
+  const [dragging, setDragging] = useState(false);
 
   useEffect(() => {
     const s = getSession();
@@ -81,12 +89,12 @@ export function CalendarApp() {
 
   // Light polling so a second browser tab feels "live" during demos.
   useEffect(() => {
-    if (!resourceId || panelOpen || adminOpen) return;
+    if (!resourceId || panelOpen || adminOpen || dragging) return;
     const id = window.setInterval(() => {
       void refreshBookings(true);
     }, 8000);
     return () => window.clearInterval(id);
-  }, [resourceId, panelOpen, adminOpen, refreshBookings]);
+  }, [resourceId, panelOpen, adminOpen, dragging, refreshBookings]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -226,7 +234,9 @@ export function CalendarApp() {
         ) : !bookable ? (
           <span className="text-xs text-ink/45">View-only</span>
         ) : (
-          <span className="text-xs text-ink/45">Click a slot or booking</span>
+          <span className="text-xs text-ink/45">
+            Drag a booking to reschedule · click to edit
+          </span>
         )}
       </div>
 
@@ -243,6 +253,14 @@ export function CalendarApp() {
           resource={selected}
           highlightId={conflictId}
           freshIds={freshIds}
+          canDragBooking={(booking) =>
+            canEditBooking(
+              session.membership.role,
+              booking.host.id,
+              session.user.id,
+            )
+          }
+          onDragActiveChange={setDragging}
           onSlotClick={(start) => {
             setEditing(null);
             setSlotStart(start);
@@ -254,6 +272,47 @@ export function CalendarApp() {
             setEditing(booking);
             setConflictId(null);
             setPanelOpen(true);
+          }}
+          onBookingMove={async (booking, startsAt, endsAt) => {
+            const previous = booking;
+            setConflictId(null);
+            setError(null);
+            setBookings((prev) =>
+              prev.map((b) =>
+                b.id === booking.id
+                  ? {
+                      ...b,
+                      startsAt: startsAt.toISOString(),
+                      endsAt: endsAt.toISOString(),
+                    }
+                  : b,
+              ),
+            );
+            try {
+              const updated = await updateBooking(booking.id, {
+                startsAt: startsAt.toISOString(),
+                endsAt: endsAt.toISOString(),
+              });
+              setBookings((prev) =>
+                prev.map((b) => (b.id === updated.id ? updated : b)),
+              );
+              markFresh(updated.id);
+            } catch (err) {
+              setBookings((prev) =>
+                prev.map((b) => (b.id === previous.id ? previous : b)),
+              );
+              if (err instanceof ApiError && err.status === 409) {
+                const { message, bookingId } = extractConflict(err);
+                setError(message);
+                setConflictId(bookingId);
+              } else {
+                setError(
+                  err instanceof Error
+                    ? err.message
+                    : "Could not reschedule booking",
+                );
+              }
+            }
           }}
         />
       ) : null}

@@ -144,7 +144,7 @@ postgresql://slotcraft:slotcraft@localhost:5432/slotcraft?schema=public
 
 - **v1:** login, resources, week calendar, create booking, exclusive conflict + authz
 - **v2 (this repo):** availability hours, capacity > 1, cancel/reschedule, resource admin, role switcher, tests, live polling
-- **Later:** websockets, multi-org signup, drag-resize on the grid
+- **Later:** websockets, multi-org signup, resize handles on the grid
 
 ## Troubleshooting
 
