@@ -26,7 +26,7 @@ Cloud agents use `.cursor/environment.json` in this repo. On boot they run `scri
 
 1. Ensure Docker is up: `sudo service docker start` then `docker compose ps`.
 2. Re-run install steps: `bash scripts/cloud-install.sh`.
-3. If `@slotcraft/shared` imports fail: `pnpm --filter @slotcraft/shared build`.
+3. If `@slotcraft/shared` imports fail (e.g. `Cannot find module '@slotcraft/shared/dist/index.js'` during `db:seed`/`dev`): the committed `packages/shared/tsconfig.tsbuildinfo` makes incremental `tsc` skip emitting `dist/index.js` on a clean checkout (only a `.d.ts.map` appears). Delete it first, then rebuild: `rm -f packages/shared/tsconfig.tsbuildinfo && pnpm --filter @slotcraft/shared build`.
 4. If Prisma errors on `DATABASE_URL`: confirm `apps/api/.env` exists (install script copies from `.env.example`).
 
 ### Secrets (optional)
