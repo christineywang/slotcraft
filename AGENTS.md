@@ -56,7 +56,8 @@ These project rules live in this repo only (not team/org dashboard rules). Autom
 
 ## PRs, evidence, and review
 
-- **Screenshots in PR bodies:** Never use relative paths (e.g. `.github/evidence/...`). Use absolute raw GitHub URLs: `https://raw.githubusercontent.com/christineywang/slotcraft/<branch>/path/to/image.png` (replace `<branch>` with the PR head branch).
+- **UI / feature PRs — evidence required:** For user-visible or UI work, you **must** include a short demo video and/or screenshots in the PR proving the change works. Commit files on the PR branch (e.g. `.github/evidence/<ticket-or-slug>/`). If you cannot capture evidence, say so in the PR with a reason; do not omit silently.
+- **Screenshots and video in PR bodies:** Never use relative paths (e.g. `.github/evidence/...`). Embed using **absolute** raw GitHub URLs only: `https://raw.githubusercontent.com/christineywang/slotcraft/<branch>/path/to/file.png` (or `.webm` / `.mp4`; replace `<branch>` with the PR head branch). See `.cursor/rules/pr-evidence-urls.mdc`.
 - **Draft PRs / Bugbot:** Cursor “Open PR” often creates drafts; Bugbot skips drafts by default. After opening a draft PR, run `gh pr ready` so it is ready for review.
 
 ## Jira (CHR / fe-anysphere-demo)
