@@ -1,0 +1,11 @@
+---
+description: Jira CHR / fe-anysphere-demo text must use GitHub-flavored Markdown, not Confluence wiki markup
+alwaysApply: true
+---
+
+# Jira descriptions and comments (CHR / fe-anysphere-demo)
+
+When writing Jira issue descriptions, comments, or automation output for project **CHR** or **fe-anysphere-demo**:
+
+- Use **GitHub-flavored Markdown**: `##` headings, `**bold**`, `-` lists, `[text](url)` links, fenced code blocks.
+- **Do not** use Confluence wiki markup (`h2.`, `{code}`, `{noformat}`, etc.) — Jira Cloud shows it as plain text.

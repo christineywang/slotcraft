@@ -1,0 +1,15 @@
+---
+description: Use absolute raw GitHub URLs for PR screenshot/evidence images, never relative paths
+alwaysApply: true
+---
+
+# PR screenshots and evidence
+
+When embedding images or evidence in pull request bodies (including automation-generated PRs):
+
+- **Do not** use relative paths such as `.github/evidence/...` or repo-relative file paths — they break for reviewers and tools.
+- **Do** use absolute raw GitHub URLs:
+
+  `https://raw.githubusercontent.com/christineywang/slotcraft/<branch>/path/to/image.png`
+
+Replace `<branch>` with the PR’s head branch name.
