@@ -1,0 +1,16 @@
+---
+description: Mark draft PRs ready for review so Bugbot runs (gh pr ready)
+alwaysApply: true
+---
+
+# Draft PRs and Bugbot
+
+Cursor “Open PR” often creates **draft** pull requests. Bugbot skips draft PRs by default.
+
+After opening or updating a draft PR that should be reviewed, run:
+
+```bash
+gh pr ready
+```
+
+Use the PR for the current branch if applicable (`gh pr ready` with no args when checked out on the branch).

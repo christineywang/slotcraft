@@ -44,3 +44,21 @@ For non-default secrets, add them in [Cloud Agents → Secrets](https://cursor.c
 ### Faster startups (snapshot)
 
 After a successful agent-driven or first Dockerfile boot, save a **snapshot** from [Environments](https://cursor.com/dashboard/cloud-agents#environments) and optionally set `"snapshot": "<id>"` in `.cursor/environment.json` to skip repeated Docker layer work.
+
+## Field Eng demo — repo defaults
+
+These project rules live in this repo only (not team/org dashboard rules). Automations, Jira “Use Cursor”, and cloud agents should follow them.
+
+| Item | Value |
+|------|--------|
+| Canonical GitHub repo | `christineywang/slotcraft` |
+| Default base branch | `main` |
+
+## PRs, evidence, and review
+
+- **Screenshots in PR bodies:** Never use relative paths (e.g. `.github/evidence/...`). Use absolute raw GitHub URLs: `https://raw.githubusercontent.com/christineywang/slotcraft/<branch>/path/to/image.png` (replace `<branch>` with the PR head branch).
+- **Draft PRs / Bugbot:** Cursor “Open PR” often creates drafts; Bugbot skips drafts by default. After opening a draft PR, run `gh pr ready` so it is ready for review.
+
+## Jira (CHR / fe-anysphere-demo)
+
+When writing Jira descriptions or comments for project CHR or fe-anysphere-demo: use GitHub-flavored Markdown (`##` headings, `**bold**`, lists, links). Do not use Confluence wiki markup (`h2.`, `{code}`, etc.) — it renders as plain text in Jira Cloud.

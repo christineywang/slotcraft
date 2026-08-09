@@ -1,0 +1,11 @@
+---
+description: Canonical GitHub repo and default base branch for the Field Eng slotcraft demo
+alwaysApply: true
+---
+
+# Demo repo defaults
+
+- Canonical repository: `christineywang/slotcraft`
+- Default base branch for PRs: `main`
+
+These are project-scoped rules in this repo only — not team/org dashboard rules.
