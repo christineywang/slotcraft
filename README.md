@@ -88,7 +88,8 @@ Short version:
 | `pnpm dev` | API + web in parallel (Turbo) |
 | `pnpm build` | Build shared → api → web |
 | `pnpm lint` | Typecheck all packages |
-| `pnpm test` | API unit tests (booking rules) |
+| `pnpm test` | API unit tests (booking rules + health smoke) |
+| `pnpm smoke` | Runtime smoke: `/health`, admin login, web login page (needs `pnpm dev`) |
 | `pnpm db:up` | Start Postgres (`docker compose up -d`) |
 | `pnpm db:down` | Stop Postgres |
 | `pnpm db:migrate` | Apply Prisma migrations |
