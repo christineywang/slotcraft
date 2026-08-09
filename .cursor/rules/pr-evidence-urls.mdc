@@ -1,15 +1,36 @@
 ---
-description: Use absolute raw GitHub URLs for PR screenshot/evidence images, never relative paths
+description: Require PR demo evidence for UI/feature work; embed via absolute raw GitHub URLs only
 alwaysApply: true
 ---
 
-# PR screenshots and evidence
+# PR screenshots, video, and evidence
 
-When embedding images or evidence in pull request bodies (including automation-generated PRs):
+For **user-visible or UI feature work** (Field Eng slotcraft demo), evidence in the PR is **required**, not optional. Cloud agents, Jira “Use Cursor”, and automations must follow this.
+
+## Capture and commit
+
+- Include a **short demo video** (`.webm` / `.mp4`) and/or **screenshots** (`.png`, etc.) in the PR body proving the change works.
+- **Commit** media on the PR head branch, e.g. under `.github/evidence/<ticket-or-slug>/` (use the Jira key or a short slug).
+
+## Embed in the PR body
+
+When embedding images or video in pull request bodies (including automation-generated PRs):
 
 - **Do not** use relative paths such as `.github/evidence/...` or repo-relative file paths — they break for reviewers and tools.
-- **Do** use absolute raw GitHub URLs:
+- **Do** use **absolute** raw GitHub URLs only:
 
-  `https://raw.githubusercontent.com/christineywang/slotcraft/<branch>/path/to/image.png`
+  `https://raw.githubusercontent.com/christineywang/slotcraft/<branch>/path/to/file.png`
+
+  (Same pattern for `.webm`, `.mp4`, etc.)
 
 Replace `<branch>` with the PR’s head branch name.
+
+Example markdown:
+
+```markdown
+![Booking conflict UI](https://raw.githubusercontent.com/christineywang/slotcraft/cursor/my-feature-10a9/.github/evidence/CHR-123/conflict-409.png)
+```
+
+## When evidence cannot be captured
+
+State that explicitly in the PR (e.g. under **Evidence** or **Testing**) with a **reason** — do not silently omit evidence.
