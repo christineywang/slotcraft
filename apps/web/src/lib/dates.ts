@@ -69,3 +69,27 @@ export function durationHeight(startsAt: Date, endsAt: Date) {
   const hours = (endsAt.getTime() - startsAt.getTime()) / (60 * 60 * 1000);
   return Math.max(hours * HOUR_HEIGHT, 28);
 }
+
+/** Minutes of granularity when dragging booking blocks on the week grid. */
+export const DRAG_SNAP_MINUTES = 15;
+
+/**
+ * Convert a Y offset within the day column into a Date on `day`,
+ * snapped to DRAG_SNAP_MINUTES within the visible day range.
+ */
+export function offsetToSnappedTime(day: Date, offsetY: number) {
+  const rawHours = DAY_START_HOUR + offsetY / HOUR_HEIGHT;
+  const totalMinutes = Math.round((rawHours * 60) / DRAG_SNAP_MINUTES) * DRAG_SNAP_MINUTES;
+  const clamped = Math.min(
+    Math.max(totalMinutes, DAY_START_HOUR * 60),
+    DAY_END_HOUR * 60 - DRAG_SNAP_MINUTES,
+  );
+  const next = new Date(day);
+  next.setHours(0, 0, 0, 0);
+  next.setMinutes(clamped);
+  return next;
+}
+
+export function bookingDurationMs(startsAt: Date, endsAt: Date) {
+  return Math.max(endsAt.getTime() - startsAt.getTime(), DRAG_SNAP_MINUTES * 60 * 1000);
+}
