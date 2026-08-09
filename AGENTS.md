@@ -10,6 +10,8 @@ Monorepo: pnpm workspaces + Turborepo. Web (`apps/web`), API (`apps/api`), share
 | Dev servers | `pnpm dev` |
 | Lint / typecheck | `pnpm lint` |
 | Production build | `pnpm build` |
+| Unit tests | `pnpm test` |
+| Runtime smoke | `pnpm smoke` (health, auth, bookings, conflict 409, viewer 403, web login; needs `pnpm dev`) |
 | DB up / down | `pnpm db:up` / `pnpm db:down` |
 | Migrations | `pnpm db:migrate` |
 | Reset DB + seed | `pnpm db:reset` |
@@ -39,6 +41,7 @@ For non-default secrets, add them in [Cloud Agents → Secrets](https://cursor.c
 
 - `pnpm lint` and `pnpm build` when changing types or shared contracts.
 - Hit API: `curl -s http://localhost:3001/health`.
+- Or run `pnpm smoke` after `pnpm dev` for health + auth + booking conflict/viewer checks.
 - Manual UI checks on :3000 for calendar / booking flows (conflict → 409, viewer → 403).
 
 ### Faster startups (snapshot)
