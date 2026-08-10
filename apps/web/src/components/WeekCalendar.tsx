@@ -190,15 +190,18 @@ export function WeekCalendar({
       const current = dragRef.current;
       if (!current || e.pointerId !== current.pointerId) return;
 
-      dragRef.current = null;
-      setDrag(null);
-
       if (!current.grabbed) {
+        dragRef.current = null;
+        setDrag(null);
         onBookingClick(current.booking);
         return;
       }
 
-      if (!onBookingMove) return;
+      if (!onBookingMove) {
+        dragRef.current = null;
+        setDrag(null);
+        return;
+      }
 
       const day = addDays(weekStart, current.dayOffset);
       const startsAt = dateAtDayMinutes(day, current.startMinutes);
@@ -209,10 +212,17 @@ export function WeekCalendar({
         startsAt.getTime() === originalStart &&
         endsAt.getTime() === originalEnd
       ) {
+        dragRef.current = null;
+        setDrag(null);
         return;
       }
 
-      await onBookingMove(current.booking, startsAt, endsAt);
+      // Start the move (optimistic update) before clearing drag so React
+      // batches both and the block does not flash at the old position.
+      const movePromise = onBookingMove(current.booking, startsAt, endsAt);
+      dragRef.current = null;
+      setDrag(null);
+      await movePromise;
     }
 
     window.addEventListener("pointermove", onPointerMove);
