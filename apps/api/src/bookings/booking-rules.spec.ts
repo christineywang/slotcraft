@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { isClosedHour } from "@slotcraft/shared";
 import {
   canMutateBooking,
   isAtCapacity,
@@ -59,6 +60,16 @@ describe("isWithinAvailability", () => {
     const start = new Date(2026, 7, 5, 16, 0, 0);
     const end = new Date(2026, 7, 6, 10, 0, 0);
     expect(isWithinAvailability(start, end, 8, 20)).toBe(false);
+  });
+});
+
+describe("isClosedHour", () => {
+  it("marks Studio A hours outside 9–18 as closed", () => {
+    expect(isClosedHour(8, 9, 18)).toBe(true);
+    expect(isClosedHour(9, 9, 18)).toBe(false);
+    expect(isClosedHour(17, 9, 18)).toBe(false);
+    expect(isClosedHour(18, 9, 18)).toBe(true);
+    expect(isClosedHour(19, 9, 18)).toBe(true);
   });
 });
 

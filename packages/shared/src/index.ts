@@ -114,6 +114,15 @@ export const ResourceSchema = z.object({
 });
 export type Resource = z.infer<typeof ResourceSchema>;
 
+/** True when a calendar hour cell is outside [availableFromHour, availableToHour). */
+export function isClosedHour(
+  hour: number,
+  availableFromHour: number,
+  availableToHour: number,
+): boolean {
+  return hour < availableFromHour || hour >= availableToHour;
+}
+
 export const BookingSchema = z.object({
   id: z.string(),
   resourceId: z.string(),
