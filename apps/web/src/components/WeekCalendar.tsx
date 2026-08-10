@@ -408,7 +408,7 @@ export function WeekCalendar({
               {showPreview && drag ? (
                 <div
                   aria-hidden
-                  className="pointer-events-none absolute inset-x-1 z-20 overflow-hidden rounded-md border border-dashed border-teal bg-teal/80 px-2 py-1 text-left text-white shadow-lg ring-2 ring-teal/30"
+                  className="pointer-events-none absolute inset-x-1 z-20 overflow-hidden rounded-md border-2 border-dashed border-teal bg-teal/35 px-2 py-1 text-left text-ink shadow-lg ring-2 ring-teal/40 backdrop-blur-[1px]"
                   style={{
                     top: Math.max(hourToOffset(drag.previewStartsAt), 0),
                     height: Math.min(
@@ -418,10 +418,10 @@ export function WeekCalendar({
                     ),
                   }}
                 >
-                  <div className="truncate text-xs font-semibold">
+                  <div className="truncate text-xs font-semibold text-teal">
                     {drag.booking.title}
                   </div>
-                  <div className="truncate text-[10px] opacity-90">
+                  <div className="truncate text-[10px] font-medium text-teal/80">
                     {formatTime(drag.previewStartsAt)}–
                     {formatTime(drag.previewEndsAt)}
                   </div>
