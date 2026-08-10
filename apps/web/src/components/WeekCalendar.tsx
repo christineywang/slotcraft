@@ -1,6 +1,6 @@
 "use client";
 
-import type { Booking, Resource } from "@slotcraft/shared";
+import { isClosedHour, type Booking, type Resource } from "@slotcraft/shared";
 import {
   DAY_END_HOUR,
   DAY_START_HOUR,
@@ -125,20 +125,24 @@ export function WeekCalendar({
               {hours.map((hour) => {
                 const slot = new Date(day);
                 slot.setHours(hour, 0, 0, 0);
-                const closed = hour < openFrom || hour >= openTo;
+                const closed = isClosedHour(hour, openFrom, openTo);
                 return (
                   <button
                     key={hour}
                     type="button"
+                    disabled={closed}
                     aria-label={
                       closed
                         ? `Closed ${formatHour(hour)}`
                         : `Book ${formatHour(hour)}`
                     }
-                    onClick={() => onSlotClick(slot)}
-                    className={`absolute inset-x-0 border-b border-ink/5 transition ${
+                    onClick={() => {
+                      if (closed) return;
+                      onSlotClick(slot);
+                    }}
+                    className={`absolute inset-x-0 border-b border-ink/5 transition disabled:pointer-events-none disabled:opacity-100 ${
                       closed
-                        ? "cursor-not-allowed bg-ink/[0.04] hover:bg-ink/[0.06]"
+                        ? "cursor-not-allowed bg-ink/[0.04]"
                         : "cursor-cell hover:bg-teal/10"
                     }`}
                     style={{
